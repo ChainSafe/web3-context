@@ -1,0 +1,33 @@
+{
+  "name": "blockchain-context",
+  "version": "0.1.0",
+  "description": "React context wrapper for Blocknative OnboardJS and utilities",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChainSafe/blockchain-context.git"
+  },
+  "keywords": [
+    "web3",
+    "context",
+    "blockchain"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ChainSafe/blockchain-context/issues"
+  },
+  "homepage": "https://github.com/ChainSafe/blockchain-context#readme",
+  "devDependencies": {
+    "@types/react": "^16.9.44",
+    "typescript": "^3.9.7"
+  },
+  "dependencies": {
+    "bnc-onboard": "^1.11.0",
+    "ethers": "^5.0.8",
+    "react": "^16.13.1"
+  }
+}
