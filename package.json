@@ -1,33 +1,52 @@
 {
-  "name": "blockchain-context",
-  "version": "0.1.0",
-  "description": "React context wrapper for Blocknative OnboardJS and utilities",
-  "main": "index.js",
+  "name": "@chainsafe/web3-context",
+  "version": "1.0.0",
+  "description": "A React Context wrapper for Blocknative OnbardJS with a couple of utility functions",
+  "author": "FSM1",
+  "license": "GPL-3.0",
+  "repository": "https://github.com/ChainSafe/web3-context.git",
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">=8",
+    "yarn": ">=1"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "rollup -c",
+    "start": "rollup -c -w"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ChainSafe/blockchain-context.git"
+  "dependencies": {},
+  "peerDependencies": {
+    "bnc-onboard": ">= 1.11.0 < 2",
+    "ethers": ">= 5.0.0 < 6",
+    "react": ">= 16.8.0",
+    "react-dom": ">= 16.8.0"
   },
-  "keywords": [
-    "web3",
-    "context",
-    "blockchain"
-  ],
-  "author": "",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/ChainSafe/blockchain-context/issues"
-  },
-  "homepage": "https://github.com/ChainSafe/blockchain-context#readme",
   "devDependencies": {
-    "@types/react": "^16.9.44",
-    "typescript": "^3.9.7"
-  },
-  "dependencies": {
+    "@rollup/plugin-commonjs": "^14.0.0",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^8.4.0",
+    "@types/react": "^16.3.13",
+    "@types/react-dom": "^16.0.5",
+    "babel-core": "^6.26.3",
+    "babel-runtime": "^6.26.0",
     "bnc-onboard": "^1.11.0",
     "ethers": "^5.0.8",
-    "react": "^16.13.1"
-  }
+    "prettier": "2.0.5",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0",
+    "rollup": "2.23.1",
+    "rollup-plugin-node-polyfills": "^0.2.1",
+    "rollup-plugin-peer-deps-external": "^2.2.3",
+    "rollup-plugin-typescript2": "^0.25.3",
+    "typescript": "^3.9.6"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "react",
+    "typescript",
+    "ethers",
+    "onboardjs"
+  ]
 }
