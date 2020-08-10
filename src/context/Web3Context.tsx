@@ -6,23 +6,22 @@ import {
   Wallet,
   Initialization,
 } from 'bnc-onboard/dist/src/interfaces';
-import { providers, ethers, BigNumber } from 'ethers';
+import { providers, ethers, BigNumber, utils } from 'ethers';
 import { formatEther } from '@ethersproject/units';
 import { Erc20DetailedFactory } from '../interfaces/Erc20DetailedFactory';
 import { Erc20Detailed } from '../interfaces/Erc20Detailed';
 
-export type OnboardConfig = Partial<
-  Omit<Initialization, 'subscriptions' | 'networkId'>
->;
+export type OnboardConfig = Partial<Omit<Initialization, 'networkId'>>;
 
 type EthGasStationSettings = 'fast' | 'fastest' | 'safeLow' | 'average';
-type EtherchainSettings = 'safeLow' | 'standard' | 'fast' | 'fastest';
+type EtherchainGasSettings = 'safeLow' | 'standard' | 'fast' | 'fastest';
 
 type Web3ContextProps = {
   onboardConfig?: OnboardConfig;
   networkIds: number[];
   ethGasStationApiKey?: string;
-  gasPriceSetting?: EthGasStationSettings | EtherchainSettings;
+  gasPricePollingInterval?: number;
+  gasPriceSetting?: EthGasStationSettings | EtherchainGasSettings;
   tokenAddresses?: string[];
   spenderAddress?: string;
   children: React.ReactNode;
@@ -36,9 +35,7 @@ type TokenInfo = {
   allowance?: number;
 };
 
-type Tokens = {
-  [address: string]: TokenInfo;
-};
+type Tokens = Map<string, TokenInfo>;
 
 type Web3Context = {
   onboard?: OnboardApi;
@@ -63,6 +60,7 @@ const Web3Provider = ({
   onboardConfig,
   networkIds,
   ethGasStationApiKey,
+  gasPricePollingInterval = 60,
   gasPriceSetting = 'fast',
   tokenAddresses = [],
   spenderAddress,
@@ -76,7 +74,7 @@ const Web3Provider = ({
   const [wallet, setWallet] = useState<Wallet | undefined>(undefined);
   const [onboard, setOnboard] = useState<OnboardApi | undefined>(undefined);
   const [isReady, setIsReady] = useState<boolean>(false);
-  const [tokens, setTokens] = useState<Tokens>({});
+  const [tokens, setTokens] = useState<Tokens>(new Map<string, TokenInfo>());
   const [gasPrice, setGasPrice] = useState(0);
 
   // Initialize OnboardJS
@@ -90,8 +88,10 @@ const Web3Provider = ({
             address: (address) => {
               setAddress(address);
               checkIsReady();
+              onboardConfig?.subscriptions?.address &&
+                onboardConfig?.subscriptions?.address(address);
             },
-            wallet: (wallet: Wallet) => {
+            wallet: (wallet) => {
               if (wallet.provider) {
                 wallet.name &&
                   localStorage.setItem('onboard.selectedWallet', wallet.name);
@@ -100,6 +100,8 @@ const Web3Provider = ({
               } else {
                 setWallet(undefined);
               }
+              onboardConfig?.subscriptions?.wallet &&
+                onboardConfig.subscriptions.wallet(wallet);
             },
             network: (network) => {
               if (networkIds.includes(network)) {
@@ -107,15 +109,18 @@ const Web3Provider = ({
               }
               setNetwork(network);
               checkIsReady();
+              onboardConfig?.subscriptions?.network &&
+                onboardConfig.subscriptions.network(network);
             },
             balance: (balance) => {
-              console.log('Balance has been changed: ', balance);
               try {
                 const bal = Number(formatEther(balance));
                 !isNaN(bal) ? setEthBalance(bal) : setEthBalance(0);
               } catch (error) {
                 setEthBalance(0);
               }
+              onboardConfig?.subscriptions?.balance &&
+                onboardConfig.subscriptions.balance(balance);
             },
           },
         });
@@ -124,8 +129,6 @@ const Web3Provider = ({
         savedWallet && onboard.walletSelect(savedWallet);
 
         setOnboard(onboard);
-
-        //setEthBalance(Number(formatEther(onboard.getState().balance)))
       } catch (error) {
         console.log('Error initializing onboard');
         console.log(error);
@@ -140,10 +143,8 @@ const Web3Provider = ({
     let poller: NodeJS.Timeout;
     if ((network || networkIds[0]) === 1) {
       console.log('Starting Gas Price Poller');
-      const getGasPrice = refreshGasPrice;
-
-      getGasPrice();
-      poller = setInterval(getGasPrice, 60000);
+      refreshGasPrice();
+      poller = setInterval(refreshGasPrice, gasPricePollingInterval * 1000);
     } else {
       console.log('You are not using mainnet. Defaulting to 10 gwei');
       setGasPrice(10);
@@ -163,16 +164,18 @@ const Web3Provider = ({
     ) => {
       if (address) {
         const balance = Number(
-          BigNumber.from(await token.balanceOf(address))
-            .div(decimals)
-            .toString()
+          utils.formatUnits(
+            BigNumber.from(await token.balanceOf(address)),
+            decimals
+          )
         );
         var allowance = 0;
         if (spenderAddress) {
           allowance = Number(
-            BigNumber.from(await await token.allowance(address, spenderAddress))
-              .div(decimals)
-              .toString()
+            utils.formatUnits(
+              BigNumber.from(await token.balanceOf(address)),
+              decimals
+            )
           );
         } else {
           console.log('No spender address provided. Unable to get allowance.');
@@ -213,7 +216,7 @@ const Web3Provider = ({
           const tokenSymbol = await tokenContract.symbol();
           newTokenInfo.symbol = tokenSymbol;
         } catch (error) {
-          console.log(
+          console.error(
             'There was an error getting the token symbol. Does this contract implement ERC20Detailed?'
           );
         }
@@ -222,8 +225,8 @@ const Web3Provider = ({
           const tokenDecimals = await tokenContract.decimals();
           newTokenInfo.decimals = tokenDecimals;
         } catch (error) {
-          console.log(
-            'There was an error getting the decimals. Does this contract implement ERC20Detailed?'
+          console.error(
+            'There was an error getting the token decimals. Does this contract implement ERC20Detailed?'
           );
         }
         const newTokens = tokens;
@@ -292,7 +295,7 @@ const Web3Provider = ({
       if (ethGasStationApiKey) {
         const ethGasStationResponse = await (
           await fetch(
-            `https://ethgasstation.info/api/ethgasAPI.json?api-key=${process.env.REACT_APP_ETH_GAS_STATION_API_KEY}`
+            `https://ethgasstation.info/api/ethgasAPI.json?api-key=${ethGasStationApiKey}`
           )
         ).json();
         gasPrice = ethGasStationResponse[gasPriceSetting] / 10;
