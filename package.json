@@ -12,7 +12,13 @@
   },
   "scripts": {
     "build": "rollup -c",
-    "start": "rollup -c -w"
+    "start": "rollup -c -w",
+    "prettier-format": "prettier --config .prettierrc 'src/**/*.{ts,tsx,js,jsx}' --write"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run prettier-format"
+    }
   },
   "dependencies": {},
   "peerDependencies": {
@@ -31,6 +37,7 @@
     "babel-runtime": "^6.26.0",
     "bnc-onboard": "^1.11.0",
     "ethers": "^5.0.8",
+    "husky": "^4.2.5",
     "prettier": "2.0.5",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
