@@ -39,7 +39,7 @@ type Tokens = Map<string, TokenInfo>;
 
 type Web3Context = {
   onboard?: OnboardApi;
-  provider?: providers.BaseProvider;
+  provider?: providers.Web3Provider;
   address?: string;
   network?: number;
   ethBalance?: number;
@@ -66,7 +66,7 @@ const Web3Provider = ({
   spenderAddress,
 }: Web3ContextProps) => {
   const [address, setAddress] = useState<string | undefined>(undefined);
-  const [provider, setProvider] = useState<providers.BaseProvider | undefined>(
+  const [provider, setProvider] = useState<providers.Web3Provider | undefined>(
     undefined
   );
   const [network, setNetwork] = useState<number | undefined>(undefined);
