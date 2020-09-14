@@ -4,28 +4,32 @@ A React Context wrapper for Blocknative OnbardJS
 
 ## How to use
 
-To compile your code once, run
+Wrap you application in a
 
-- `npm run build`.
+```
+<Web3Provider networkIds={[1]}>
+    {YOUR APP CODE}
+</Web3Provider>
+```
 
-To compile your code once and refresh on file change, run
+The following props can be passed in to configure the Web3 Provider:
 
-- `npm run start`.
+```
+  onboardConfig?: OnboardConfig; // The OnboardJS Configuration object - See [here](https://docs.blocknative.com/onboard#built-in-modules)
+  networkIds: number[]; // The Networks that the app is designed to work with
+  ethGasStationApiKey?: string;
+  gasPricePollingInterval?: number;
+  gasPriceSetting?: EthGasStationSettings | EtherchainGasSettings;
+  tokenAddresses?: string[];
+  spenderAddress?: string;
+```
 
-To publish your package to npm, make sure you're logged in the correct account by running
+Anywhere further down the ocmponent tree, use:
 
-- `npm login`.
+```
+  const {address} = useWeb3();
+```
 
-Compile your package by running
-
-- `npm run build`
-
-Update the package version accordingly by using
-
-- [`npm version [patch | minor | major]`](https://docs.npmjs.com/about-semantic-versioning)
-
-Then publish your package by running
-
-- `npm publish`
+Take a look at the `example` folder for a basic implementation of the components.
 
 ### Happy Building ♡
