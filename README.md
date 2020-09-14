@@ -24,7 +24,7 @@ The following props can be passed in to configure the Web3 Provider:
   spenderAddress?: string;
 ```
 
-Anywhere further down the ocmponent tree, use:
+Anywhere further down the component tree, use:
 
 ```
   const {address} = useWeb3();
