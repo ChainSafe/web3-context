@@ -1,26 +1,53 @@
-import React from 'react'
+import React from 'react';
 
-import { useWeb3 } from '@chainsafe/web3-context'
+import { useWeb3 } from '@chainsafe/web3-context';
+import { ethers, providers } from 'ethers';
 
 function networkName(id: any) {
   switch (Number(id)) {
     case 1:
-      return 'main'
+      return 'main';
     case 3:
-      return 'ropsten'
+      return 'ropsten';
     case 4:
-      return 'rinkeby'
+      return 'rinkeby';
     case 5:
-      return 'goerli'
+      return 'goerli';
     case 42:
-      return 'kovan'
+      return 'kovan';
     default:
-      return 'localhost'
+      return 'localhost';
   }
 }
 
+const signMessage = async (
+  message: string,
+  provider: providers.Web3Provider
+) => {
+  const data = ethers.utils.toUtf8Bytes(message);
+  const signer = await provider.getSigner();
+  const addr = await signer.getAddress();
+  const sig = await provider.send('personal_sign', [
+    ethers.utils.hexlify(data),
+    addr.toLowerCase(),
+  ]);
+  return sig;
+};
+
 const Wallet = () => {
-  const { address, ethBalance, network, wallet, onboard } = useWeb3()
+  const {
+    address,
+    ethBalance,
+    network,
+    wallet,
+    onboard,
+    provider,
+    isReady,
+    checkIsReady,
+    resetOnboard,
+    selectCheckAndSign,
+  } = useWeb3();
+
   return (
     <div>
       <main>
@@ -34,21 +61,26 @@ const Wallet = () => {
             <h2>Onboarding Users with Onboard.js</h2>
             <div>
               {!wallet?.provider && (
-                <button
-                  className="bn-demo-button"
-                  onClick={() => {
-                    onboard?.walletSelect()
-                  }}
-                >
-                  Select a Wallet
-                </button>
+                <>
+                  <button
+                    className="bn-demo-button"
+                    onClick={() => {
+                      onboard?.walletSelect();
+                    }}
+                  >
+                    Select a Wallet
+                  </button>
+                  <button
+                    className="bn-demo-button"
+                    onClick={selectCheckAndSign}
+                  >
+                    Select check sign
+                  </button>
+                </>
               )}
 
-              {wallet?.provider && (
-                <button
-                  className="bn-demo-button"
-                  onClick={onboard?.walletCheck}
-                >
+              {wallet?.provider && !isReady && (
+                <button className="bn-demo-button" onClick={checkIsReady}>
                   Wallet Checks
                 </button>
               )}
@@ -62,14 +94,21 @@ const Wallet = () => {
                 </button>
               )}
 
-              {wallet?.provider && (
+              {provider && isReady && (
                 <button
                   className="bn-demo-button"
-                  onClick={onboard?.walletReset}
+                  onClick={() => signMessage('test', provider)}
                 >
+                  Sign message
+                </button>
+              )}
+
+              {wallet?.provider && (
+                <button className="bn-demo-button" onClick={resetOnboard}>
                   Reset Wallet State
                 </button>
               )}
+
               {wallet?.provider && wallet?.dashboard && (
                 <button className="bn-demo-button" onClick={wallet.dashboard}>
                   Open Wallet Dashboard
@@ -88,6 +127,6 @@ const Wallet = () => {
         </section>
       </main>
     </div>
-  )
-}
-export default Wallet
+  );
+};
+export default Wallet;

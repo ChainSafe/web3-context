@@ -13,7 +13,10 @@
   "scripts": {
     "build": "rollup -c",
     "start": "rollup -c -w",
-    "prettier-format": "prettier --config .prettierrc 'src/**/*.{ts,tsx,js,jsx}' --write"
+    "prettier-format": "prettier --config .prettierrc 'src/**/*.{ts,tsx,js,jsx}' --write",
+    "clean:dependencies": "rm -rf ./node_modules && rm -rf ./*/**/node_modules",
+    "clean:dist": "rm -rf ./*/**/dist && rm -rf ./*/**/build",
+    "clean": "yarn clean:dependencies && yarn clean:dist"
   },
   "husky": {
     "hooks": {

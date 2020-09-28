@@ -51,9 +51,24 @@ type Web3Context = {
   refreshGasPrice(): Promise<void>;
   isMobile: boolean;
   tokens: Tokens;
+  selectCheckAndSign(): Promise<void>;
 };
 
 const Web3Context = React.createContext<Web3Context | undefined>(undefined);
+
+const signMessage = async (
+  message: string,
+  provider: providers.Web3Provider
+) => {
+  const data = ethers.utils.toUtf8Bytes(message);
+  const signer = await provider.getSigner();
+  const addr = await signer.getAddress();
+  const sig = await provider.send('personal_sign', [
+    ethers.utils.hexlify(data),
+    addr.toLowerCase(),
+  ]);
+  return sig;
+};
 
 const Web3Provider = ({
   children,
@@ -95,7 +110,9 @@ const Web3Provider = ({
               if (wallet.provider) {
                 wallet.name &&
                   localStorage.setItem('onboard.selectedWallet', wallet.name);
+                console.log(wallet);
                 setWallet(wallet);
+                console.log('Setting provider');
                 setProvider(new ethers.providers.Web3Provider(wallet.provider));
               } else {
                 setWallet(undefined);
@@ -283,6 +300,22 @@ const Web3Provider = ({
     return !!isReady;
   };
 
+  const checkAndSign = async () => {
+    const isActuallyReady = await checkIsReady();
+    if (isActuallyReady && provider) {
+      const signature = await signMessage('test check and sign', provider);
+      console.log(signature);
+    }
+  };
+
+  const selectCheckAndSign = async () => {
+    const walletSelected = await onboard?.walletSelect();
+    console.log(wallet);
+    if (walletSelected) {
+      await checkAndSign();
+    }
+  };
+
   const resetOnboard = () => {
     localStorage.setItem('onboard.selectedWallet', '');
     setIsReady(false);
@@ -333,6 +366,7 @@ const Web3Provider = ({
         refreshGasPrice,
         isMobile: !!onboardState?.mobileDevice,
         tokens: tokens,
+        selectCheckAndSign,
       }}
     >
       {children}

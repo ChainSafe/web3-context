@@ -17,6 +17,7 @@
     "@types/node": "14.0.27",
     "@types/react": "16.9.45",
     "@types/react-dom": "16.9.8",
+    "ethers": "link:../node_modules/ethers",
     "react": "link:../node_modules/react",
     "react-dom": "link:../node_modules/react-dom",
     "react-scripts": "3.4.1",
