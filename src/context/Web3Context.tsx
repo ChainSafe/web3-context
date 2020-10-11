@@ -20,10 +20,11 @@ type Web3ContextProps = {
   onboardConfig?: OnboardConfig;
   networkIds: number[];
   ethGasStationApiKey?: string;
-  gasPricePollingInterval?: number;
+  gasPricePollingInterval?: number; //Seconds between gas price polls. Defaults to 0 - Disabled
   gasPriceSetting?: EthGasStationSettings | EtherchainGasSettings;
   tokenAddresses?: string[];
   spenderAddress?: string;
+  saveWalletSelect?: boolean;
   children: React.ReactNode;
 };
 
@@ -51,6 +52,7 @@ type Web3Context = {
   refreshGasPrice(): Promise<void>;
   isMobile: boolean;
   tokens: Tokens;
+  signMessage(message: string): Promise<string>;
 };
 
 const Web3Context = React.createContext<Web3Context | undefined>(undefined);
@@ -60,10 +62,11 @@ const Web3Provider = ({
   onboardConfig,
   networkIds,
   ethGasStationApiKey,
-  gasPricePollingInterval = 60,
+  gasPricePollingInterval = 0,
   gasPriceSetting = 'fast',
   tokenAddresses = [],
   spenderAddress,
+  saveWalletSelect = true,
 }: Web3ContextProps) => {
   const [address, setAddress] = useState<string | undefined>(undefined);
   const [provider, setProvider] = useState<providers.Web3Provider | undefined>(
@@ -94,6 +97,7 @@ const Web3Provider = ({
             wallet: (wallet) => {
               if (wallet.provider) {
                 wallet.name &&
+                  saveWalletSelect &&
                   localStorage.setItem('onboard.selectedWallet', wallet.name);
                 setWallet(wallet);
                 setProvider(new ethers.providers.Web3Provider(wallet.provider));
@@ -126,7 +130,7 @@ const Web3Provider = ({
         });
 
         const savedWallet = localStorage.getItem('onboard.selectedWallet');
-        savedWallet && onboard.walletSelect(savedWallet);
+        saveWalletSelect && savedWallet && onboard.walletSelect(savedWallet);
 
         setOnboard(onboard);
       } catch (error) {
@@ -141,12 +145,10 @@ const Web3Provider = ({
   // Gas Price poller
   useEffect(() => {
     let poller: NodeJS.Timeout;
-    if ((network || networkIds[0]) === 1) {
-      console.log('Starting Gas Price Poller');
+    if ((network || networkIds[0]) === 1 && gasPricePollingInterval > 0) {
       refreshGasPrice();
       poller = setInterval(refreshGasPrice, gasPricePollingInterval * 1000);
     } else {
-      console.log('You are not using mainnet. Defaulting to 10 gwei');
       setGasPrice(10);
     }
     return () => {
@@ -177,8 +179,6 @@ const Web3Provider = ({
               decimals
             )
           );
-        } else {
-          console.log('No spender address provided. Unable to get allowance.');
         }
         const newTokens = tokens;
         newTokens[token.address] = {
@@ -283,6 +283,19 @@ const Web3Provider = ({
     return !!isReady;
   };
 
+  const signMessage = async (message: string) => {
+    if (!provider) return Promise.reject('The provider is not yet initialized');
+
+    const data = ethers.utils.toUtf8Bytes(message);
+    const signer = await provider.getSigner();
+    const addr = await signer.getAddress();
+    const sig = await provider.send('personal_sign', [
+      ethers.utils.hexlify(data),
+      addr.toLowerCase(),
+    ]);
+    return sig;
+  };
+
   const resetOnboard = () => {
     localStorage.setItem('onboard.selectedWallet', '');
     setIsReady(false);
@@ -333,6 +346,7 @@ const Web3Provider = ({
         refreshGasPrice,
         isMobile: !!onboardState?.mobileDevice,
         tokens: tokens,
+        signMessage,
       }}
     >
       {children}
