@@ -24,7 +24,7 @@ type Web3ContextProps = {
   gasPriceSetting?: EthGasStationSettings | EtherchainGasSettings;
   tokenAddresses?: string[];
   spenderAddress?: string;
-  saveWalletSelect: boolean;
+  saveWalletSelect?: boolean;
   children: React.ReactNode;
 };
 
