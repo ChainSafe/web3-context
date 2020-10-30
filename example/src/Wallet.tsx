@@ -1,32 +1,34 @@
-import React from 'react'
+import React from 'react';
 
-import { useWeb3 } from '@chainsafe/web3-context'
+import { useWeb3 } from '@chainsafe/web3-context';
 
 function networkName(id: any) {
   switch (Number(id)) {
     case 1:
-      return 'main'
+      return 'main';
     case 3:
-      return 'ropsten'
+      return 'ropsten';
     case 4:
-      return 'rinkeby'
+      return 'rinkeby';
     case 5:
-      return 'goerli'
+      return 'goerli';
+    case 6:
+      return 'kotti';
     case 42:
-      return 'kovan'
+      return 'kovan';
     default:
-      return 'localhost'
+      return 'localhost';
   }
 }
 
 const Wallet = () => {
-  const { address, ethBalance, network, wallet, onboard } = useWeb3()
+  const { address, ethBalance, network, wallet, onboard, tokens } = useWeb3();
   return (
     <div>
       <main>
         <header className="user-info">
-          {address && <span>{address}</span>}
-          {ethBalance != null && <span>{ethBalance} ETH</span>}
+          {address && <span>{address}</span>} <br />
+          {ethBalance != null && <span>{ethBalance} ETH</span>} <br />
           {network && <span>{networkName(network)} network</span>}
         </header>
         <section className="main">
@@ -37,7 +39,7 @@ const Wallet = () => {
                 <button
                   className="bn-demo-button"
                   onClick={() => {
-                    onboard?.walletSelect()
+                    onboard?.walletSelect();
                   }}
                 >
                   Select a Wallet
@@ -84,10 +86,22 @@ const Wallet = () => {
                 </button>
               )}
             </div>
+            <div>
+              <h1>Token Balances</h1>
+              {Object.keys(tokens).map((ta) => {
+                const t = tokens[ta];
+                console.log(t);
+                return (
+                  <div key={ta}>
+                    {t.name} - {t.balance}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </section>
       </main>
     </div>
-  )
-}
-export default Wallet
+  );
+};
+export default Wallet;
