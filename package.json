@@ -1,6 +1,6 @@
 {
   "name": "@chainsafe/web3-context",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "A React Context wrapper for Blocknative OnbardJS with a couple of utility functions",
   "author": "Michael Yankelev <michael@chainsafe.io>",
   "license": "GPL-3.0",
