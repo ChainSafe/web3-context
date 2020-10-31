@@ -16,13 +16,14 @@ The following props can be passed in to configure the Web3 Provider:
 
 ```
   onboardConfig?: OnboardConfig; // The OnboardJS Configuration object - See [here](https://docs.blocknative.com/onboard#built-in-modules)
-  networkIds: number[];
+  networkIds?: number[]; // Defaults to 1 if nothing is provided
   ethGasStationApiKey?: string;
-  gasPricePollingInterval?: number; // Seconds between gas price polls. Defaults to 0 - Disabled
+  gasPricePollingInterval?: number; //Seconds between gas price polls. Defaults to 0 - Disabled
   gasPriceSetting?: EthGasStationSettings | EtherchainGasSettings;
-  tokenAddresses?: string[];
+  tokensToWatch?: TokensToWatch; // Network-keyed collection of token addresses to watch
   spenderAddress?: string;
-  saveWalletSelect: boolean; // Whether the user's wallet selection should be cached
+  cacheWalletSelection?: boolean;
+  checkNetwork?: boolean; // Defaults to true if networkIds are provided
   children: React.ReactNode;
 ```
 

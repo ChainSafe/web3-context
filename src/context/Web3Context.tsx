@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useReducer } from 'react';
 import Onboard from 'bnc-onboard';
 import {
   API as OnboardApi,
@@ -10,33 +10,36 @@ import { providers, ethers, BigNumber, utils } from 'ethers';
 import { formatEther } from '@ethersproject/units';
 import { Erc20DetailedFactory } from '../interfaces/Erc20DetailedFactory';
 import { Erc20Detailed } from '../interfaces/Erc20Detailed';
+import { TokenInfo, Tokens, tokensReducer } from './tokensReducer';
 
 export type OnboardConfig = Partial<Omit<Initialization, 'networkId'>>;
 
 type EthGasStationSettings = 'fast' | 'fastest' | 'safeLow' | 'average';
 type EtherchainGasSettings = 'safeLow' | 'standard' | 'fast' | 'fastest';
 
+type TokenConfig = {
+  address: string;
+  name?: string;
+  symbol?: string;
+  imageUri?: string;
+};
+
+type TokensToWatch = {
+  [networkId: number]: TokenConfig[];
+};
+
 type Web3ContextProps = {
   onboardConfig?: OnboardConfig;
-  networkIds: number[];
+  networkIds?: number[];
   ethGasStationApiKey?: string;
   gasPricePollingInterval?: number; //Seconds between gas price polls. Defaults to 0 - Disabled
   gasPriceSetting?: EthGasStationSettings | EtherchainGasSettings;
-  tokenAddresses?: string[];
+  tokensToWatch?: TokensToWatch; // Network-keyed collection of token addresses to watch
   spenderAddress?: string;
-  saveWalletSelect?: boolean;
+  cacheWalletSelection?: boolean;
+  checkNetwork?: boolean;
   children: React.ReactNode;
 };
-
-type TokenInfo = {
-  name?: string;
-  symbol?: string;
-  decimals: number;
-  balance: number;
-  allowance?: number;
-};
-
-type Tokens = Map<string, TokenInfo>;
 
 type Web3Context = {
   onboard?: OnboardApi;
@@ -64,9 +67,10 @@ const Web3Provider = ({
   ethGasStationApiKey,
   gasPricePollingInterval = 0,
   gasPriceSetting = 'fast',
-  tokenAddresses = [],
+  tokensToWatch,
   spenderAddress,
-  saveWalletSelect = true,
+  cacheWalletSelection = true,
+  checkNetwork = (networkIds && networkIds.length > 0) || false,
 }: Web3ContextProps) => {
   const [address, setAddress] = useState<string | undefined>(undefined);
   const [provider, setProvider] = useState<providers.Web3Provider | undefined>(
@@ -77,16 +81,22 @@ const Web3Provider = ({
   const [wallet, setWallet] = useState<Wallet | undefined>(undefined);
   const [onboard, setOnboard] = useState<OnboardApi | undefined>(undefined);
   const [isReady, setIsReady] = useState<boolean>(false);
-  const [tokens, setTokens] = useState<Tokens>(new Map<string, TokenInfo>());
+  const [tokens, tokensDispatch] = useReducer(tokensReducer, {});
   const [gasPrice, setGasPrice] = useState(0);
 
   // Initialize OnboardJS
   useEffect(() => {
     const initializeOnboard = async () => {
+      const checks = [{ checkName: 'accounts' }, { checkName: 'connect' }];
+      if (networkIds && checkNetwork) {
+        checks.push({ checkName: 'network' });
+      }
+
       try {
         const onboard = Onboard({
           ...onboardConfig,
-          networkId: networkIds[0],
+          networkId: networkIds ? networkIds[0] : 1, //Default to mainnet
+          walletCheck: checks,
           subscriptions: {
             address: (address) => {
               setAddress(address);
@@ -97,10 +107,12 @@ const Web3Provider = ({
             wallet: (wallet) => {
               if (wallet.provider) {
                 wallet.name &&
-                  saveWalletSelect &&
+                  cacheWalletSelection &&
                   localStorage.setItem('onboard.selectedWallet', wallet.name);
                 setWallet(wallet);
-                setProvider(new ethers.providers.Web3Provider(wallet.provider));
+                setProvider(
+                  new ethers.providers.Web3Provider(wallet.provider, 'any')
+                );
               } else {
                 setWallet(undefined);
               }
@@ -108,9 +120,14 @@ const Web3Provider = ({
                 onboardConfig.subscriptions.wallet(wallet);
             },
             network: (network) => {
-              if (networkIds.includes(network)) {
+              if (!networkIds || networkIds.includes(network)) {
                 onboard.config({ networkId: network });
               }
+              wallet &&
+                wallet.provider &&
+                setProvider(
+                  new ethers.providers.Web3Provider(wallet.provider, 'any')
+                );
               setNetwork(network);
               checkIsReady();
               onboardConfig?.subscriptions?.network &&
@@ -130,7 +147,9 @@ const Web3Provider = ({
         });
 
         const savedWallet = localStorage.getItem('onboard.selectedWallet');
-        saveWalletSelect && savedWallet && onboard.walletSelect(savedWallet);
+        cacheWalletSelection &&
+          savedWallet &&
+          onboard.walletSelect(savedWallet);
 
         setOnboard(onboard);
       } catch (error) {
@@ -145,7 +164,7 @@ const Web3Provider = ({
   // Gas Price poller
   useEffect(() => {
     let poller: NodeJS.Timeout;
-    if ((network || networkIds[0]) === 1 && gasPricePollingInterval > 0) {
+    if (network === 1 && gasPricePollingInterval > 0) {
       refreshGasPrice();
       poller = setInterval(refreshGasPrice, gasPricePollingInterval * 1000);
     } else {
@@ -180,45 +199,56 @@ const Web3Provider = ({
             )
           );
         }
-        const newTokens = tokens;
-        newTokens[token.address] = {
-          ...newTokens[token.address],
-          balance: balance,
-          allowance: allowance,
-        };
 
-        setTokens(newTokens);
+        tokensDispatch({
+          type: 'updateTokenBalanceAllowance',
+          payload: {
+            id: token.address,
+            allowance: allowance,
+            balance: balance,
+          },
+        });
       }
     };
 
+    const networkTokens =
+      (tokensToWatch && network && tokensToWatch[network]) || [];
+
     let tokenContracts: Array<Erc20Detailed> = [];
-    if (provider && address && tokenAddresses.length > 0) {
-      tokenAddresses.forEach(async (tokenAddress) => {
+    if (provider && address && networkTokens.length > 0) {
+      networkTokens.forEach(async (token) => {
         const tokenContract = Erc20DetailedFactory.connect(
-          tokenAddress,
+          token.address,
           provider
         );
 
         const newTokenInfo: TokenInfo = {
           decimals: 0,
           balance: 0,
+          name: token.name,
+          symbol: token.symbol,
+          imageUri: token.imageUri,
         };
 
-        try {
-          const tokenName = await tokenContract.name();
-          newTokenInfo.name = tokenName;
-        } catch (error) {
-          console.log(
-            'There was an error getting the token name. Does this contract implement ERC20Detailed?'
-          );
+        if (!token.name) {
+          try {
+            const tokenName = await tokenContract.name();
+            newTokenInfo.name = tokenName;
+          } catch (error) {
+            console.log(
+              'There was an error getting the token name. Does this contract implement ERC20Detailed?'
+            );
+          }
         }
-        try {
-          const tokenSymbol = await tokenContract.symbol();
-          newTokenInfo.symbol = tokenSymbol;
-        } catch (error) {
-          console.error(
-            'There was an error getting the token symbol. Does this contract implement ERC20Detailed?'
-          );
+        if (!token.symbol) {
+          try {
+            const tokenSymbol = await tokenContract.symbol();
+            newTokenInfo.symbol = tokenSymbol;
+          } catch (error) {
+            console.error(
+              'There was an error getting the token symbol. Does this contract implement ERC20Detailed?'
+            );
+          }
         }
 
         try {
@@ -229,12 +259,11 @@ const Web3Provider = ({
             'There was an error getting the token decimals. Does this contract implement ERC20Detailed?'
           );
         }
-        const newTokens = tokens;
-        newTokens[tokenAddress] = {
-          ...newTokenInfo,
-        };
 
-        setTokens(newTokens);
+        tokensDispatch({
+          type: 'addToken',
+          payload: { id: token.address, token: newTokenInfo },
+        });
 
         checkBalanceAndAllowance(tokenContract, newTokenInfo.decimals);
 
@@ -269,10 +298,14 @@ const Web3Provider = ({
     }
     return () => {
       if (tokenContracts.length > 0) {
-        tokenContracts.forEach((tc) => tc.removeAllListeners());
+        tokenContracts.forEach((tc) => {
+          tc.removeAllListeners();
+        });
+        tokenContracts = [];
+        tokensDispatch({ type: 'resetTokens' });
       }
     };
-  }, [network, address]);
+  }, [network, provider, address]);
 
   const checkIsReady = async () => {
     const isReady = await onboard?.walletCheck();
