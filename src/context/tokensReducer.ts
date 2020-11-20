@@ -1,3 +1,25 @@
+import { BigNumber, BigNumberish, CallOverrides, ContractTransaction, Overrides } from "ethers";
+
+export type TokenFunctions = {
+  approve?:(
+    spender: string,
+    amount: BigNumberish,
+    overrides?: Overrides
+  ) => Promise<ContractTransaction>;
+
+  transfer?: (
+    recipient: string,
+    amount: BigNumberish,
+    overrides?: Overrides
+  ) => Promise<ContractTransaction>;
+
+  allowance?: (
+    owner: string,
+    spender: string,
+    overrides?: CallOverrides
+  ) => Promise<BigNumber>;
+}
+
 export type TokenInfo = {
   name?: string;
   symbol?: string;
@@ -5,6 +27,7 @@ export type TokenInfo = {
   balance: number;
   allowance?: number;
   imageUri?: string;
+  functions?: TokenFunctions
 };
 
 export type Tokens = {

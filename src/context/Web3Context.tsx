@@ -17,11 +17,14 @@ export type OnboardConfig = Partial<Omit<Initialization, 'networkId'>>;
 type EthGasStationSettings = 'fast' | 'fastest' | 'safeLow' | 'average';
 type EtherchainGasSettings = 'safeLow' | 'standard' | 'fast' | 'fastest';
 
+
+
 type TokenConfig = {
   address: string;
   name?: string;
   symbol?: string;
   imageUri?: string;
+  attachFunctions?: boolean
 };
 
 type TokensToWatch = {
@@ -178,6 +181,7 @@ const Web3Provider = ({
   }, [network]);
 
   // Token balance and allowance listener
+  // TODO: Allowance check not needed unless target is specificed
   useEffect(() => {
     const checkBalanceAndAllowance = async (
       token: Erc20Detailed,
@@ -258,6 +262,14 @@ const Web3Provider = ({
           console.error(
             'There was an error getting the token decimals. Does this contract implement ERC20Detailed?'
           );
+        }
+
+        if (token.attachFunctions) {
+          newTokenInfo.functions = {
+            allowance: tokenContract.allowance,
+            approve: tokenContract.approve,
+            transfer: tokenContract.transfer
+          }
         }
 
         tokensDispatch({
