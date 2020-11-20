@@ -6,7 +6,7 @@ import {
   Wallet,
   Initialization,
 } from 'bnc-onboard/dist/src/interfaces';
-import { providers, ethers, BigNumber, utils } from 'ethers';
+import { providers, ethers, BigNumber, utils, BigNumberish, Overrides, ContractTransaction, CallOverrides } from 'ethers';
 import { formatEther } from '@ethersproject/units';
 import { Erc20DetailedFactory } from '../interfaces/Erc20DetailedFactory';
 import { Erc20Detailed } from '../interfaces/Erc20Detailed';
@@ -17,14 +17,11 @@ export type OnboardConfig = Partial<Omit<Initialization, 'networkId'>>;
 type EthGasStationSettings = 'fast' | 'fastest' | 'safeLow' | 'average';
 type EtherchainGasSettings = 'safeLow' | 'standard' | 'fast' | 'fastest';
 
-
-
 type TokenConfig = {
   address: string;
   name?: string;
   symbol?: string;
   imageUri?: string;
-  attachFunctions?: boolean
 };
 
 type TokensToWatch = {
@@ -263,14 +260,9 @@ const Web3Provider = ({
             'There was an error getting the token decimals. Does this contract implement ERC20Detailed?'
           );
         }
-
-        if (token.attachFunctions) {
-          newTokenInfo.functions = {
-            allowance: tokenContract.allowance,
-            approve: tokenContract.approve,
-            transfer: tokenContract.transfer
-          }
-        }
+        newTokenInfo.allowance = React.useCallback(tokenContract.allowance,[tokenContract])
+        newTokenInfo.approve = React.useCallback(tokenContract.approve,[tokenContract])
+        newTokenInfo.transfer = React.useCallback(tokenContract.transfer,[tokenContract])
 
         tokensDispatch({
           type: 'addToken',
