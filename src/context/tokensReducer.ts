@@ -12,7 +12,7 @@ export type TokenInfo = {
   decimals: number;
   balance: number;
   imageUri?: string;
-  spenderAllowance?: number
+  spenderAllowance?: number;
   approve?: (
     spender: string,
     amount: BigNumberish,
