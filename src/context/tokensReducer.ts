@@ -24,7 +24,7 @@ export type TokenInfo = {
     overrides?: Overrides
   ) => Promise<ContractTransaction>;
 
-  allowance?: (
+  getAllowance?: (
     owner: string,
     spender: string,
     overrides?: CallOverrides

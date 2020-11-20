@@ -6,12 +6,7 @@ import {
   Wallet,
   Initialization,
 } from 'bnc-onboard/dist/src/interfaces';
-import {
-  providers,
-  ethers,
-  BigNumber,
-  utils,
-} from 'ethers';
+import { providers, ethers, BigNumber, utils } from 'ethers';
 import { formatEther } from '@ethersproject/units';
 import { Erc20DetailedFactory } from '../interfaces/Erc20DetailedFactory';
 import { Erc20Detailed } from '../interfaces/Erc20Detailed';
@@ -200,7 +195,7 @@ const Web3Provider = ({
         if (spenderAddress) {
           allowance = Number(
             utils.formatUnits(
-              BigNumber.from(await token.balanceOf(address)),
+              BigNumber.from(await token.allowance(address, spenderAddress)),
               decimals
             )
           );
@@ -234,15 +229,9 @@ const Web3Provider = ({
           name: token.name,
           symbol: token.symbol,
           imageUri: token.imageUri,
-          allowance: useCallback(tokenContract.allowance, [
-            tokenContract,
-          ]),
-          approve: useCallback(tokenContract.approve, [
-            tokenContract,
-          ]),
-          transfer: useCallback(tokenContract.transfer, [
-            tokenContract,
-          ]),
+          getAllowance: useCallback(tokenContract.allowance, [tokenContract]),
+          approve: useCallback(tokenContract.approve, [tokenContract]),
+          transfer: useCallback(tokenContract.transfer, [tokenContract]),
         };
 
         if (!token.name) {
@@ -274,7 +263,6 @@ const Web3Provider = ({
             'There was an error getting the token decimals. Does this contract implement ERC20Detailed?'
           );
         }
-       
 
         tokensDispatch({
           type: 'addToken',
