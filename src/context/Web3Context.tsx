@@ -6,12 +6,7 @@ import {
   Wallet,
   Initialization,
 } from 'bnc-onboard/dist/src/interfaces';
-import {
-  providers,
-  ethers,
-  BigNumber,
-  utils,
-} from 'ethers';
+import { providers, ethers, BigNumber, utils } from 'ethers';
 import { formatEther } from '@ethersproject/units';
 import { Erc20DetailedFactory } from '../interfaces/Erc20DetailedFactory';
 import { Erc20Detailed } from '../interfaces/Erc20Detailed';
@@ -34,32 +29,32 @@ type TokensToWatch = {
 };
 
 type Web3ContextProps = {
-  onboardConfig?: OnboardConfig;
-  networkIds?: number[];
-  ethGasStationApiKey?: string;
-  gasPricePollingInterval?: number; //Seconds between gas price polls. Defaults to 0 - Disabled
-  gasPriceSetting?: EthGasStationSettings | EtherchainGasSettings;
-  tokensToWatch?: TokensToWatch; // Network-keyed collection of token addresses to watch
-  spenderAddress?: string;
   cacheWalletSelection?: boolean;
   checkNetwork?: boolean;
   children: React.ReactNode;
+  ethGasStationApiKey?: string;
+  gasPricePollingInterval?: number; //Seconds between gas price polls. Defaults to 0 - Disabled
+  gasPriceSetting?: EthGasStationSettings | EtherchainGasSettings;
+  networkIds?: number[];
+  onboardConfig?: OnboardConfig;
+  spenderAddress?: string;
+  tokensToWatch?: TokensToWatch; // Network-keyed collection of token addresses to watch
 };
 
 type Web3Context = {
+  address?: string;
+  ethBalance?: number;
+  gasPrice: number;
+  isReady: boolean;
+  isMobile: boolean;
+  network?: number;
   onboard?: OnboardApi;
   provider?: providers.Web3Provider;
-  address?: string;
-  network?: number;
-  ethBalance?: number;
   wallet?: Wallet;
-  isReady: boolean;
-  checkIsReady(): Promise<boolean>;
-  resetOnboard(): void;
-  gasPrice: number;
-  refreshGasPrice(): Promise<void>;
-  isMobile: boolean;
   tokens: Tokens;
+  checkIsReady(): Promise<boolean>;
+  refreshGasPrice(): Promise<void>;
+  resetOnboard(): void;
   signMessage(message: string): Promise<string>;
 };
 
@@ -196,9 +191,9 @@ const Web3Provider = ({
             decimals
           )
         );
-        var allowance = 0;
+        var spenderAllowance = 0;
         if (spenderAddress) {
-          allowance = Number(
+          spenderAllowance = Number(
             utils.formatUnits(
               BigNumber.from(await token.balanceOf(address)),
               decimals
@@ -210,7 +205,7 @@ const Web3Provider = ({
           type: 'updateTokenBalanceAllowance',
           payload: {
             id: token.address,
-            allowance: allowance,
+            spenderAllowance: spenderAllowance,
             balance: balance,
           },
         });
@@ -231,18 +226,13 @@ const Web3Provider = ({
         const newTokenInfo: TokenInfo = {
           decimals: 0,
           balance: 0,
+          imageUri: token.imageUri,
           name: token.name,
           symbol: token.symbol,
-          imageUri: token.imageUri,
-          allowance: useCallback(tokenContract.allowance, [
-            tokenContract,
-          ]),
-          approve: useCallback(tokenContract.approve, [
-            tokenContract,
-          ]),
-          transfer: useCallback(tokenContract.transfer, [
-            tokenContract,
-          ]),
+          spenderAllowance: 0,
+          allowance: useCallback(tokenContract.allowance, [tokenContract]),
+          approve: useCallback(tokenContract.approve, [tokenContract]),
+          transfer: useCallback(tokenContract.transfer, [tokenContract]),
         };
 
         if (!token.name) {
@@ -274,7 +264,6 @@ const Web3Provider = ({
             'There was an error getting the token decimals. Does this contract implement ERC20Detailed?'
           );
         }
-       
 
         tokensDispatch({
           type: 'addToken',

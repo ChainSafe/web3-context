@@ -12,6 +12,7 @@ export type TokenInfo = {
   decimals: number;
   balance: number;
   imageUri?: string;
+  spenderAllowance?: number
   approve?: (
     spender: string,
     amount: BigNumberish,
@@ -41,7 +42,7 @@ export function tokensReducer(
     | { type: 'resetTokens' }
     | {
         type: 'updateTokenBalanceAllowance';
-        payload: { id: string; balance: number; allowance: number };
+        payload: { id: string; balance: number; spenderAllowance: number };
       }
 ) {
   switch (action.type) {
@@ -56,7 +57,7 @@ export function tokensReducer(
         [action.payload.id]: {
           ...tokens[action.payload.id],
           balance: action.payload.balance,
-          allowance: action.payload.allowance,
+          spenderAllowance: action.payload.spenderAllowance,
         },
       };
     case 'resetTokens':
