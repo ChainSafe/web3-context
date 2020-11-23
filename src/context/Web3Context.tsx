@@ -218,7 +218,7 @@ const Web3Provider = ({
     let tokenContracts: Array<Erc20Detailed> = [];
     if (provider && address && networkTokens.length > 0) {
       networkTokens.forEach(async (token) => {
-        const signer = await provider.getSigner()
+        const signer = await provider.getSigner();
         const tokenContract = Erc20DetailedFactory.connect(
           token.address,
           signer
