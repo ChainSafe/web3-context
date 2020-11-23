@@ -1,17 +1,12 @@
 import * as React from 'react';
-import { useState, useEffect, useReducer, useCallback } from 'react';
+import { useState, useEffect, useReducer } from 'react';
 import Onboard from 'bnc-onboard';
 import {
   API as OnboardApi,
   Wallet,
   Initialization,
 } from 'bnc-onboard/dist/src/interfaces';
-import {
-  providers,
-  ethers,
-  BigNumber,
-  utils,
-} from 'ethers';
+import { providers, ethers, BigNumber, utils } from 'ethers';
 import { formatEther } from '@ethersproject/units';
 import { Erc20DetailedFactory } from '../interfaces/Erc20DetailedFactory';
 import { Erc20Detailed } from '../interfaces/Erc20Detailed';
@@ -235,9 +230,9 @@ const Web3Provider = ({
           name: token.name,
           symbol: token.symbol,
           spenderAllowance: 0,
-          allowance: useCallback(tokenContract.allowance, [tokenContract]),
-          approve: useCallback(tokenContract.approve, [tokenContract]),
-          transfer: useCallback(tokenContract.transfer, [tokenContract]),
+          allowance: tokenContract.allowance,
+          approve: tokenContract.approve,
+          transfer: tokenContract.transfer,
         };
 
         if (!token.name) {
@@ -269,7 +264,6 @@ const Web3Provider = ({
             'There was an error getting the token decimals. Does this contract implement ERC20Detailed?'
           );
         }
-       
 
         tokensDispatch({
           type: 'addToken',
