@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useEffect, useReducer, useCallback } from 'react';
+import { useState, useEffect, useReducer } from 'react';
 import Onboard from 'bnc-onboard';
 import {
   API as OnboardApi,
@@ -235,9 +235,9 @@ const Web3Provider = ({
           name: token.name,
           symbol: token.symbol,
           spenderAllowance: 0,
-          allowance: useCallback(tokenContract.allowance, [tokenContract]),
-          approve: useCallback(tokenContract.approve, [tokenContract]),
-          transfer: useCallback(tokenContract.transfer, [tokenContract]),
+          allowance: tokenContract.allowance,
+          approve: tokenContract.approve,
+          transfer: tokenContract.transfer,
         };
 
         if (!token.name) {
