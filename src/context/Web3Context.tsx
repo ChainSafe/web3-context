@@ -85,7 +85,7 @@ const Web3Provider = ({
   const [tokens, tokensDispatch] = useReducer(tokensReducer, {});
   const [gasPrice, setGasPrice] = useState(0);
   const canUseLocalStorage = testLocalStorage();
-  
+
   // Initialize OnboardJS
   useEffect(() => {
     const initializeOnboard = async () => {
