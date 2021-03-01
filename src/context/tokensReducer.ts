@@ -60,7 +60,7 @@ export function tokensReducer(
         [action.payload.id]: {
           ...tokens[action.payload.id],
           balance: action.payload.balance,
-          balanceBN: action.payload.balanceBN
+          balanceBN: action.payload.balanceBN,
           spenderAllowance: action.payload.spenderAllowance,
         },
       };
