@@ -7,6 +7,7 @@ import {
   Initialization,
 } from 'bnc-onboard/dist/src/interfaces';
 import { providers, ethers, BigNumber, utils } from 'ethers';
+import { BigNumber as BN } from 'bignumber.js';
 import { formatEther } from '@ethersproject/units';
 import { Erc20DetailedFactory } from '../interfaces/Erc20DetailedFactory';
 import { Erc20Detailed } from '../interfaces/Erc20Detailed';
@@ -185,12 +186,9 @@ const Web3Provider = ({
       decimals: number
     ) => {
       if (address) {
-        const balance = Number(
-          utils.formatUnits(
-            BigNumber.from(await token.balanceOf(address)),
-            decimals
-          )
-        );
+        const bal = await token.balanceOf(address);
+        const balance = Number(utils.formatUnits(bal, decimals));
+        const balanceBN = new BN(bal.toString()).shiftedBy(-decimals);
         var spenderAllowance = 0;
         if (spenderAddress) {
           spenderAllowance = Number(
@@ -207,6 +205,7 @@ const Web3Provider = ({
             id: token.address,
             spenderAllowance: spenderAllowance,
             balance: balance,
+            balanceBN,
           },
         });
       }
@@ -227,6 +226,7 @@ const Web3Provider = ({
         const newTokenInfo: TokenInfo = {
           decimals: 0,
           balance: 0,
+          balanceBN: new BN(0),
           imageUri: token.imageUri,
           name: token.name,
           symbol: token.symbol,

@@ -6,11 +6,14 @@ import {
   Overrides,
 } from 'ethers';
 
+import { BigNumber as BN } from 'bignumber.js'
+
 export type TokenInfo = {
   name?: string;
   symbol?: string;
   decimals: number;
   balance: number;
+  balanceBN: BN
   imageUri?: string;
   spenderAllowance?: number;
   approve?: (
@@ -42,7 +45,7 @@ export function tokensReducer(
     | { type: 'resetTokens' }
     | {
         type: 'updateTokenBalanceAllowance';
-        payload: { id: string; balance: number; spenderAllowance: number };
+        payload: { id: string; balance: number; balanceBN: BN, spenderAllowance: number };
       }
 ) {
   switch (action.type) {
@@ -57,6 +60,7 @@ export function tokensReducer(
         [action.payload.id]: {
           ...tokens[action.payload.id],
           balance: action.payload.balance,
+          balanceBN: action.payload.balanceBN,
           spenderAllowance: action.payload.spenderAllowance,
         },
       };
