@@ -30,16 +30,16 @@ type TokensToWatch = {
 };
 
 type AddChainParams = {
-  chainId: number
-  chainName: string
-  rpcUrls: string[]
+  chainId: number;
+  chainName: string;
+  rpcUrls: string[];
   nativeCurrency: {
-    name: string
-    symbol: string
-    decimals: number
-  }
-  blockExplorerUrls?: string[]
-}
+    name: string;
+    symbol: string;
+    decimals: number;
+  };
+  blockExplorerUrls?: string[];
+};
 
 type Web3ContextProps = {
   cacheWalletSelection?: boolean;
@@ -52,7 +52,7 @@ type Web3ContextProps = {
   onboardConfig?: OnboardConfig;
   spenderAddress?: string;
   tokensToWatch?: TokensToWatch; // Network-keyed collection of token addresses to watch
-  additionalChainParams?: AddChainParams[]
+  additionalChainParams?: AddChainParams[];
 };
 
 type Web3Context = {
@@ -70,7 +70,7 @@ type Web3Context = {
   refreshGasPrice(): Promise<void>;
   resetOnboard(): void;
   signMessage(message: string): Promise<string>;
-  switchNetwork(chainId: number): Promise<void>
+  switchNetwork(chainId: number): Promise<void>;
 };
 
 const Web3Context = React.createContext<Web3Context | undefined>(undefined);
@@ -86,7 +86,7 @@ const Web3Provider = ({
   spenderAddress,
   cacheWalletSelection = true,
   checkNetwork = (networkIds && networkIds.length > 0) || false,
-  additionalChainParams
+  additionalChainParams,
 }: Web3ContextProps) => {
   const [address, setAddress] = useState<string | undefined>(undefined);
   const [provider, setProvider] = useState<providers.Web3Provider | undefined>(
@@ -348,43 +348,47 @@ const Web3Provider = ({
       addr.toLowerCase(),
     ]);
     return sig;
-  }
+  };
 
   const resetOnboard = () => {
     localStorage.setItem('onboard.selectedWallet', '');
     setIsReady(false);
     onboard?.walletReset();
-  }
+  };
 
   // Will attempt to switch networks to the indicated numeric chain Id.
-  // If the wallet does not suport the network, will attempt to add the 
+  // If the wallet does not suport the network, will attempt to add the
   // network to the wallet as per EIP-3085
   const switchNetwork = async (chainId: number) => {
     if (provider) {
       try {
-        await provider.send("wallet_switchEthereumChain", [
+        await provider.send('wallet_switchEthereumChain', [
           { chainId: `0x${chainId.toString(16)}` },
-        ])
+        ]);
       } catch (error) {
-        console.error("Error switching network")
+        console.error('Error switching network');
         if (error?.code === 4902) {
-          const newNetworkParams = additionalChainParams?.find(f => f.chainId === chainId)
+          const newNetworkParams = additionalChainParams?.find(
+            (f) => f.chainId === chainId
+          );
           if (newNetworkParams) {
             provider
-              .send("wallet_addEthereumChain", [{
-                ...newNetworkParams,
-                chainId: `0x${chainId.toString(16)}`
-              }])
-              .catch(() => console.error("Error adding network"))
+              .send('wallet_addEthereumChain', [
+                {
+                  ...newNetworkParams,
+                  chainId: `0x${chainId.toString(16)}`,
+                },
+              ])
+              .catch(() => console.error('Error adding network'));
           } else {
-            console.error('Network does not exist and no config provided')
+            console.error('Network does not exist and no config provided');
           }
         } else {
-          console.error(error)
+          console.error(error);
         }
       }
     }
-  }
+  };
 
   const refreshGasPrice = async () => {
     try {
@@ -431,7 +435,7 @@ const Web3Provider = ({
         isMobile: !!onboardState?.mobileDevice,
         tokens: tokens,
         signMessage,
-        switchNetwork
+        switchNetwork,
       }}
     >
       {children}
