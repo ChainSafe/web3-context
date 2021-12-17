@@ -44,14 +44,14 @@ export function tokensReducer(
     | { type: 'addToken'; payload: { id: string; token: TokenInfo } }
     | { type: 'resetTokens' }
     | {
-      type: 'updateTokenBalanceAllowance';
-      payload: {
-        id: string;
-        balance: number;
-        balanceBN: BN;
-        spenderAllowance: number;
-      };
-    }
+        type: 'updateTokenBalanceAllowance';
+        payload: {
+          id: string;
+          balance: number;
+          balanceBN: BN;
+          spenderAllowance: number;
+        };
+      }
 ) {
   switch (action.type) {
     case 'addToken':
