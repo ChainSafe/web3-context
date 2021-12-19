@@ -7,6 +7,7 @@ import {
   Initialization,
 } from 'bnc-onboard/dist/src/interfaces';
 import { providers, ethers, BigNumber, utils } from 'ethers';
+import { BigNumber as BN } from 'bignumber.js';
 import { formatEther } from '@ethersproject/units';
 import { Erc20DetailedFactory } from '../interfaces/Erc20DetailedFactory';
 import { Erc20Detailed } from '../interfaces/Erc20Detailed';
@@ -29,6 +30,18 @@ type TokensToWatch = {
   [networkId: number]: TokenConfig[];
 };
 
+type AddChainParams = {
+  chainId: number;
+  chainName: string;
+  rpcUrls: string[];
+  nativeCurrency: {
+    name: string;
+    symbol: string;
+    decimals: number;
+  };
+  blockExplorerUrls?: string[];
+};
+
 type Web3ContextProps = {
   cacheWalletSelection?: boolean;
   checkNetwork?: boolean;
@@ -40,6 +53,7 @@ type Web3ContextProps = {
   onboardConfig?: OnboardConfig;
   spenderAddress?: string;
   tokensToWatch?: TokensToWatch; // Network-keyed collection of token addresses to watch
+  additionalChainParams?: AddChainParams[];
 };
 
 type Web3Context = {
@@ -57,6 +71,7 @@ type Web3Context = {
   refreshGasPrice(): Promise<void>;
   resetOnboard(): void;
   signMessage(message: string): Promise<string>;
+  switchNetwork(chainId: number): Promise<void>;
 };
 
 const Web3Context = React.createContext<Web3Context | undefined>(undefined);
@@ -72,6 +87,7 @@ const Web3Provider = ({
   spenderAddress,
   cacheWalletSelection = true,
   checkNetwork = (networkIds && networkIds.length > 0) || false,
+  additionalChainParams,
 }: Web3ContextProps) => {
   const [address, setAddress] = useState<string | undefined>(undefined);
   const [provider, setProvider] = useState<providers.Web3Provider | undefined>(
@@ -189,12 +205,9 @@ const Web3Provider = ({
       decimals: number
     ) => {
       if (address) {
-        const balance = Number(
-          utils.formatUnits(
-            BigNumber.from(await token.balanceOf(address)),
-            decimals
-          )
-        );
+        const bal = await token.balanceOf(address);
+        const balance = Number(utils.formatUnits(bal, decimals));
+        const balanceBN = new BN(bal.toString()).shiftedBy(-decimals);
         var spenderAllowance = 0;
         if (spenderAddress) {
           spenderAllowance = Number(
@@ -211,6 +224,7 @@ const Web3Provider = ({
             id: token.address,
             spenderAllowance: spenderAllowance,
             balance: balance,
+            balanceBN,
           },
         });
       }
@@ -231,6 +245,7 @@ const Web3Provider = ({
         const newTokenInfo: TokenInfo = {
           decimals: 0,
           balance: 0,
+          balanceBN: new BN(0),
           imageUri: token.imageUri,
           name: token.name,
           symbol: token.symbol,
@@ -345,6 +360,40 @@ const Web3Provider = ({
     onboard?.walletReset();
   };
 
+  // Will attempt to switch networks to the indicated numeric chain Id.
+  // If the wallet does not suport the network, will attempt to add the
+  // network to the wallet as per EIP-3085
+  const switchNetwork = async (chainId: number) => {
+    if (provider) {
+      try {
+        await provider.send('wallet_switchEthereumChain', [
+          { chainId: `0x${chainId.toString(16)}` },
+        ]);
+      } catch (error) {
+        console.error('Error switching network');
+        if (error?.code === 4902) {
+          const newNetworkParams = additionalChainParams?.find(
+            (f) => f.chainId === chainId
+          );
+          if (newNetworkParams) {
+            provider
+              .send('wallet_addEthereumChain', [
+                {
+                  ...newNetworkParams,
+                  chainId: `0x${chainId.toString(16)}`,
+                },
+              ])
+              .catch(() => console.error('Error adding network'));
+          } else {
+            console.error('Network does not exist and no config provided');
+          }
+        } else {
+          console.error(error);
+        }
+      }
+    }
+  };
+
   const refreshGasPrice = async () => {
     try {
       let gasPrice;
@@ -390,6 +439,7 @@ const Web3Provider = ({
         isMobile: !!onboardState?.mobileDevice,
         tokens: tokens,
         signMessage,
+        switchNetwork,
       }}
     >
       {children}
