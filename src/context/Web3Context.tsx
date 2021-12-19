@@ -12,6 +12,7 @@ import { formatEther } from '@ethersproject/units';
 import { Erc20DetailedFactory } from '../interfaces/Erc20DetailedFactory';
 import { Erc20Detailed } from '../interfaces/Erc20Detailed';
 import { TokenInfo, Tokens, tokensReducer } from './tokensReducer';
+import { testLocalStorage } from './helpers';
 
 export type OnboardConfig = Partial<Omit<Initialization, 'networkId'>>;
 
@@ -99,6 +100,7 @@ const Web3Provider = ({
   const [isReady, setIsReady] = useState<boolean>(false);
   const [tokens, tokensDispatch] = useReducer(tokensReducer, {});
   const [gasPrice, setGasPrice] = useState(0);
+  const canUseLocalStorage = testLocalStorage();
 
   // Initialize OnboardJS
   useEffect(() => {
@@ -123,6 +125,7 @@ const Web3Provider = ({
             wallet: (wallet) => {
               if (wallet.provider) {
                 wallet.name &&
+                  canUseLocalStorage &&
                   cacheWalletSelection &&
                   localStorage.setItem('onboard.selectedWallet', wallet.name);
                 setWallet(wallet);
@@ -162,7 +165,8 @@ const Web3Provider = ({
           },
         });
 
-        const savedWallet = localStorage.getItem('onboard.selectedWallet');
+        const savedWallet =
+          canUseLocalStorage && localStorage.getItem('onboard.selectedWallet');
         cacheWalletSelection &&
           savedWallet &&
           onboard.walletSelect(savedWallet);
@@ -351,7 +355,7 @@ const Web3Provider = ({
   };
 
   const resetOnboard = () => {
-    localStorage.setItem('onboard.selectedWallet', '');
+    canUseLocalStorage && localStorage.setItem('onboard.selectedWallet', '');
     setIsReady(false);
     onboard?.walletReset();
   };
