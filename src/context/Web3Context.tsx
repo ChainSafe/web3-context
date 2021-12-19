@@ -30,7 +30,7 @@ type TokensToWatch = {
   [networkId: number]: TokenConfig[];
 };
 
-type AddChainParams = {
+export type AddChainParams = {
   chainId: number;
   chainName: string;
   rpcUrls: string[];
