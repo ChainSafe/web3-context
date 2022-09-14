@@ -376,20 +376,19 @@ const Web3Provider = ({
             (f) => f.chainId === chainId
           );
           if (newNetworkParams) {
-            provider
-              .send('wallet_addEthereumChain', [
-                {
-                  ...newNetworkParams,
-                  chainId: `0x${chainId.toString(16)}`,
-                },
-              ])
+            provider.send('wallet_addEthereumChain', [
+              {
+                ...newNetworkParams,
+                chainId: `0x${chainId.toString(16)}`,
+              },
+            ]);
           } else {
-            console.error('Network does not exist and no config provided')
-            throw new Error("Network does not exist and no config provided")
+            console.error('Network does not exist and no config provided');
+            throw new Error('Network does not exist and no config provided');
           }
         } else {
-          console.error(error)
-          throw new Error("Network switching failed")
+          console.error(error);
+          throw new Error('Network switching failed');
         }
       }
     }
