@@ -383,12 +383,13 @@ const Web3Provider = ({
                   chainId: `0x${chainId.toString(16)}`,
                 },
               ])
-              .catch(() => console.error('Error adding network'));
           } else {
-            console.error('Network does not exist and no config provided');
+            console.error('Network does not exist and no config provided')
+            throw new Error("Network does not exist and no config provided")
           }
         } else {
-          console.error(error);
+          console.error(error)
+          throw new Error("Network switching failed")
         }
       }
     }
