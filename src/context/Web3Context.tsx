@@ -6,7 +6,7 @@ import {
   Wallet,
   Initialization,
 } from 'bnc-onboard/dist/src/interfaces';
-import { providers, ethers, BigNumber, utils } from 'ethers';
+import { BrowserProvider, ethers } from 'ethers';
 import { BigNumber as BN } from 'bignumber.js';
 import { formatEther } from '@ethersproject/units';
 import { Erc20DetailedFactory } from '../interfaces/Erc20DetailedFactory';
@@ -17,7 +17,7 @@ import { testLocalStorage } from './helpers';
 export type OnboardConfig = Partial<Omit<Initialization, 'networkId'>>;
 
 type EthGasStationSettings = 'fast' | 'fastest' | 'safeLow' | 'average';
-type EtherchainGasSettings = 'safeLow' | 'standard' | 'fast' | 'fastest';
+type EtherChainGasSettings = 'safeLow' | 'standard' | 'fast' | 'fastest';
 
 type TokenConfig = {
   address: string;
@@ -47,8 +47,8 @@ type Web3ContextProps = {
   checkNetwork?: boolean;
   children: React.ReactNode;
   ethGasStationApiKey?: string;
-  gasPricePollingInterval?: number; //Seconds between gas price polls. Defaults to 0 - Disabled
-  gasPriceSetting?: EthGasStationSettings | EtherchainGasSettings;
+  gasPricePollingInterval?: number; // Seconds between gas price polls. Defaults to 0 - Disabled
+  gasPriceSetting?: EthGasStationSettings | EtherChainGasSettings;
   networkIds?: number[];
   onboardConfig?: OnboardConfig;
   spenderAddress?: string;
@@ -64,7 +64,7 @@ type Web3Context = {
   isMobile: boolean;
   network?: number;
   onboard?: OnboardApi;
-  provider?: providers.Web3Provider;
+  provider?: BrowserProvider;
   wallet?: Wallet;
   tokens: Tokens;
   checkIsReady(): Promise<boolean>;
@@ -90,7 +90,7 @@ const Web3Provider = ({
   additionalChainParams,
 }: Web3ContextProps) => {
   const [address, setAddress] = useState<string | undefined>(undefined);
-  const [provider, setProvider] = useState<providers.Web3Provider | undefined>(
+  const [provider, setProvider] = useState<BrowserProvider | undefined>(
     undefined
   );
   const [network, setNetwork] = useState<number | undefined>(undefined);
@@ -129,9 +129,7 @@ const Web3Provider = ({
                   cacheWalletSelection &&
                   localStorage.setItem('onboard.selectedWallet', wallet.name);
                 setWallet(wallet);
-                setProvider(
-                  new ethers.providers.Web3Provider(wallet.provider, 'any')
-                );
+                setProvider(new ethers.BrowserProvider(wallet.provider, 'any'));
               } else {
                 setWallet(undefined);
               }
@@ -144,9 +142,7 @@ const Web3Provider = ({
               }
               wallet &&
                 wallet.provider &&
-                setProvider(
-                  new ethers.providers.Web3Provider(wallet.provider, 'any')
-                );
+                setProvider(new ethers.BrowserProvider(wallet.provider, 'any'));
               setNetwork(network);
               checkIsReady();
               onboardConfig?.subscriptions?.network &&
@@ -198,7 +194,7 @@ const Web3Provider = ({
   }, [network]);
 
   // Token balance and allowance listener
-  // TODO: Allowance check not needed unless target is specificed
+  // TODO: Allowance check not needed unless target is specified
   useEffect(() => {
     const checkBalanceAndAllowance = async (
       token: Erc20Detailed,
@@ -206,15 +202,12 @@ const Web3Provider = ({
     ) => {
       if (address) {
         const bal = await token.balanceOf(address);
-        const balance = Number(utils.formatUnits(bal, decimals));
+        const balance = Number(ethers.formatUnits(bal, decimals));
         const balanceBN = new BN(bal.toString()).shiftedBy(-decimals);
         var spenderAllowance = 0;
         if (spenderAddress) {
           spenderAllowance = Number(
-            utils.formatUnits(
-              BigNumber.from(await token.balanceOf(address)),
-              decimals
-            )
+            ethers.formatUnits(BigInt(await token.balanceOf(address)), decimals)
           );
         }
 
@@ -344,11 +337,11 @@ const Web3Provider = ({
   const signMessage = async (message: string) => {
     if (!provider) return Promise.reject('The provider is not yet initialized');
 
-    const data = ethers.utils.toUtf8Bytes(message);
+    const data = ethers.toUtf8Bytes(message);
     const signer = await provider.getSigner();
     const addr = await signer.getAddress();
     const sig = await provider.send('personal_sign', [
-      ethers.utils.hexlify(data),
+      ethers.hexlify(data),
       addr.toLowerCase(),
     ]);
     return sig;
@@ -361,7 +354,7 @@ const Web3Provider = ({
   };
 
   // Will attempt to switch networks to the indicated numeric chain Id.
-  // If the wallet does not suport the network, will attempt to add the
+  // If the wallet does not support the network, will attempt to add the
   // network to the wallet as per EIP-3085
   const switchNetwork = async (chainId: number) => {
     if (provider) {
@@ -405,10 +398,10 @@ const Web3Provider = ({
         ).json();
         gasPrice = ethGasStationResponse[gasPriceSetting] / 10;
       } else {
-        const etherchainResponse = await (
+        const etherChainResponse = await (
           await fetch('https://www.etherchain.org/api/gasPriceOracle')
         ).json();
-        gasPrice = Number(etherchainResponse[gasPriceSetting]);
+        gasPrice = Number(etherChainResponse[gasPriceSetting]);
       }
 
       const newGasPrice = !isNaN(Number(gasPrice)) ? Number(gasPrice) : 65;
