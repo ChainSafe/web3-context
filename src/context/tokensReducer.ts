@@ -1,10 +1,4 @@
-import {
-  BigNumber,
-  BigNumberish,
-  CallOverrides,
-  ContractTransaction,
-  Overrides,
-} from 'ethers';
+import { BigNumberish, ContractTransaction, Overrides } from 'ethers';
 
 import { BigNumber as BN } from 'bignumber.js';
 
@@ -31,8 +25,8 @@ export type TokenInfo = {
   allowance?: (
     owner: string,
     spender: string,
-    overrides?: CallOverrides
-  ) => Promise<BigNumber>;
+    overrides?: Overrides
+  ) => Promise<BigNumberish>;
 };
 
 export type Tokens = {

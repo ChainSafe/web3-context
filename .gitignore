@@ -47,3 +47,6 @@ typings/
 # generate output
 dist
 build
+
+# vs code
+.vscode
